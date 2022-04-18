@@ -47,16 +47,6 @@ const {
   Client,
   Intents
 } = require('discord.js');
-const {
-  finished
-} = require('stream');
-const {
-  type
-} = require('os');
-const {
-  stringify
-} = require('querystring');
-const { allowedNodeEnvironmentFlags } = require('process');
 const client = new Client({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]
 });
