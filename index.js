@@ -7,12 +7,18 @@ function saveStatsData() {
   console.log('Saved Stats data.')
 }
 function milisToMinutes(millis) {
-  var minutes = Math.floor(millis/60000)
-  return minutes
+  var minutes = Math.floor(millis/60000);
+  return minutes;
 }
-function milisToHours(millis) {
-  var hours = Math.floor(millis/3600000)
-  return hours
+function milisToHours(milis) {
+  var hours = Math.floor(milis/3600000);
+  var mins = milis-(hours*3600000);
+  return hours;
+}
+function milisToHoursMins(milis) {
+  var hours = Math.floor(milis/3600000);
+  var mins = Math.round((milis-(hours*3600000))/60000);
+  return mins
 }
 function payCalcMin(mins){
   var hours = mins/60;
@@ -36,6 +42,7 @@ const {
 const jsonfile = require('jsonfile');
 const fs = require('fs');
 const Discord = require('discord.js');
+const { MessageEmbed } = require('discord.js');
 const {
   Client,
   Intents
@@ -66,7 +73,6 @@ client.once('ready', () => {
   console.log('Bot is online.');
 });
 client.on('messageCreate', async msg => {
- 
   if (msg.guild.id !== '886787687699333190') return;
   if (msg.content.startsWith(prefix) !== true) return;
   msgNumber++
@@ -82,10 +88,13 @@ client.on('messageCreate', async msg => {
       lastWorkTime: 0,
       mugAmount: 0,
       mugDrank: 0,
+      mugOwned: 0,
       money: 0.00,
+      hoursWorked: 0,
     };
   }
   const userStats = guildstats[msg.author.id];
+  if (userStats.hoursWorked >= 0 !== true) userStats.hoursWorked = 0
   const args = msg.content.slice(prefix.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
     switch (command) {
@@ -96,33 +105,58 @@ client.on('messageCreate', async msg => {
         if (userStats.workingStatus === true) {
           var workingTime = Date.now()-userStats.lastWorkTime;
             if(workingTime>=3600000) {
-              var workingTimeRounded = milisToHours(workingTime);
+              var workingTimeRounded = milisToHours(workingTime)     
+              var workingTimeMins = milisToHoursMins(workingTime)
               userStats.workingStatus = false;
-              var pay = payCalcHours(workingTimeRounded);
+              var pay = payCalcHours(workingTimeRounded) + payCalcMin(workingTimeMins);
               userStats.money += pay;
-              msg.reply('You worked for ' + workingTimeRounded + ' hours and made $' + pay + '!');
-              return;
+              userStats.hoursWorked += workingTimeRounded
+              msg.reply('You worked for ' + workingTimeRounded + ' hours, '+ workingTimeMins +' minutes and made $' + pay + '!');
             } else {
               var workingTimeRounded = milisToMinutes(workingTime);
               userStats.workingStatus = false;
               var pay = payCalcMin(workingTimeRounded)
               userStats.money += pay
+              userStats.hoursWorked += Math.round((workingTimeRounded/60)*100)/100
+              userStats.hoursWorked = Math.round(userStats.hoursWorked*100)/100
               msg.reply('You worked for ' + workingTimeRounded + ' minutes and made $' + pay +'!');
-              return;
-            }
-          var workingTimeRounded = milisToMinutes(workingTime);
-          
+            };
         } else {
           userStats.lastWorkTime = Date.now();
           userStats.workingStatus = true;
           msg.reply('You start your shift.');
         }
         break;
+        case 'profile':
+          const mugEmbed = new MessageEmbed()
+          .setColor('#0099ff')
+          .setTitle(`${msg.author.username}'s Profile`)
+          .setAuthor({ name: `${msg.author.username}`, iconURL: msg.author.avatarURL(), url: msg.author.avatarURL() })
+          .setDescription(`Here is ${msg.author.username} profile`)
+          .setThumbnail('https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp')
+          .addFields(
+            { name: 'Mug Bucks', value: `$${userStats.money}`, inline: true },
+            { name: 'Mug Drank', value: `${userStats.mugDrank}`, inline: true },
+            )
+          .addField('Hours Worked', `${userStats.hoursWorked}`, false)
+          .setTimestamp()
+          .setFooter({ text: `${msg.author.username} loves mug!`, iconURL: 'https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp' });
+          msg.channel.send({ embeds: [mugEmbed] });
+          break;
+          case 'shop':
+            const shopEmbed = new MessageEmbed()
+            .setColor('#0099ff')
+            .setTitle(`Magnificent Mug Shop`)
+            .setDescription(`Here is the Magnificent Mug Shop`)
+            .setThumbnail('https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp')
+            .addField('12 pack of mug', `$5`, false)
+            .setTimestamp()
+            .setFooter({ text: `${msg.author.username} loves mug!`, iconURL: 'https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp' });
+            msg.channel.send({ embeds: [shopEmbed] });
+            break;
         default:
           return;
-        
     }
-  
   saveStatsData()
   saveMsgData()
 })
