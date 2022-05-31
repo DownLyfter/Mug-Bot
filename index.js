@@ -33,12 +33,39 @@ function payCalcHours(hours){
   var payRound = payMult/100;
   return payRound;
 };
+function getRandomIntInclusive(min, max) {
+  min = Math.ceil(min)
+  max = Math.floor(max)
+  return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
+}
+function getQuote(number){
+  console.log(number)
+  switch (number){
+    case 1:
+      return quote1
+      console.log(quote1)
+      break;
+    case 2:
+      return quote2
+      console.log(quote2)
+      break;
+      default:
+        return "Something went wrong, so take this text instead."
+        break;
+  }
+}
+
+const mugPrice = 2
 const minWage = 13
 const {
   prefix,
   token,
   BotVersion,
 } = require('./config.json');
+const {
+  quote1,
+  quote2,
+} =require('./drinkQuotes.json')
 const jsonfile = require('jsonfile');
 const fs = require('fs');
 const Discord = require('discord.js');
@@ -54,6 +81,7 @@ const rawData = fs.readFileSync('stats.json', 'utf8')
 const data = JSON.parse(rawData)
 var msgNumber = parseInt(data.messages)
 var stats = {};
+var quoteSend
 if (fs.existsSync('mugstats.json')) {
   stats = jsonfile.readFileSync('mugstats.json');
   console.log('Synced mug sats')
@@ -88,9 +116,6 @@ client.on('messageCreate', async msg => {
   const args = msg.content.slice(prefix.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
     switch (command) {
-      case 'hello':
-        msg.reply('World!');
-        break;
       case 'work':
         if (userStats.workingStatus === true) {
           var workingTime = Date.now()-userStats.lastWorkTime;
@@ -117,6 +142,25 @@ client.on('messageCreate', async msg => {
           msg.reply('You start your shift.');
         }
         break;
+        case 'buy' : 
+        if(parseInt(args[0]) > 0){
+          let amount = parseInt(args[0])
+          if (userStats.money >= amount*mugPrice) {
+            userStats.mugAmount += amount
+            userStats.money -= amount*mugPrice
+            msg.reply(`You bought ${amount} mug's! You now have ${userStats.mugAmount} mug's!`)
+          }
+        } else {
+          msg.reply(`${args[0]} is not a valid amount!`)
+        }
+        break;
+        case 'drink' :
+          if (userStats.mugAmount > 0){
+            quoteSend = getQuote(getRandomIntInclusive(1, 2))
+            userStats.mugAmount--
+            msg.reply(`${quoteSend} You now have ${userStats.mugAmount} mug's`)
+          } else msg.reply(`You do not have any mug!`)
+        break;
         case 'profile':
           const mugEmbed = new MessageEmbed()
           .setColor('#0099ff')
@@ -139,12 +183,15 @@ client.on('messageCreate', async msg => {
             .setTitle(`Magnificent Mug Shop`)
             .setDescription(`Here is the Magnificent Mug Shop`)
             .setThumbnail('https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp')
-            .addField('12 pack of mug', `$5`, false)
+            .addField('mug', `$${mugPrice}`, false)
             .setTimestamp()
             .setFooter({ text: `${msg.author.username} loves mug!`, iconURL: 'https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp' });
             msg.channel.send({ embeds: [shopEmbed] });
             break;
         default:
+          case 'amugus':
+            msg.reply('Sussy Baka, nya!')
+          break;
           return;
     }
   saveStatsData()
