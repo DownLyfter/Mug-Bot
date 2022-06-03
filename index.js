@@ -2,66 +2,89 @@ function saveMsgData() {
   jsonfile.writeFileSync('stats.json', data)
   console.log('Saved Data')
 }
+
 function saveStatsData() {
   jsonfile.writeFileSync('mugstats.json', stats)
   console.log('Saved Stats data.')
 }
+
 function milisToMinutes(millis) {
-  var minutes = Math.floor(millis/60000);
+  var minutes = Math.floor(millis / 60000);
   return minutes;
 }
+
 function milisToHours(milis) {
-  var hours = Math.floor(milis/3600000);
-  var mins = milis-(hours*3600000);
+  var hours = Math.floor(milis / 3600000);
+  var mins = milis - (hours * 3600000);
   return hours;
 }
+
 function milisToHoursMins(milis) {
-  var hours = Math.floor(milis/3600000);
-  var mins = Math.round((milis-(hours*3600000))/60000);
+  var hours = Math.floor(milis / 3600000);
+  var mins = Math.round((milis - (hours * 3600000)) / 60000);
   return mins
 }
-function payCalcMin(mins){
-  var hours = mins/60;
+
+function payCalcMin(mins) {
+  var hours = mins / 60;
   var Pay = hours * minWage;
-  var payMult = Math.round(Pay*100);
-  var payRound = payMult/100;
+  var payMult = Math.round(Pay * 100);
+  var payRound = payMult / 100;
   return payRound;
 };
-function payCalcHours(hours){
+
+function payCalcHours(hours) {
   var Pay = hours * minWage;
-  var payMult = Math.round(Pay*100);
-  var payRound = payMult/100;
+  var payMult = Math.round(Pay * 100);
+  var payRound = payMult / 100;
   return payRound;
 };
+
 function getRandomIntInclusive(min, max) {
   min = Math.ceil(min)
   max = Math.floor(max)
   return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
 }
+
 function raiseCalc() {
-  let raiseAmount =  getRandomIntInclusive(1,10)
-  userStats.wage = userStats.wage+raiseAmount
+  let raiseAmount = getRandomIntInclusive(1, 10)
+  userStats.wage = userStats.wage + raiseAmount
   userStats.wage = getRandomIntInclusive(50, 200)
   msg.reply(`You worked for ${userStats.raiseHours} hours and got an ${raiseAmount} raise! You now make ${userStats.wage} per hour!`)
 }
-function newStatAdding() {
-  
+
+function homeCheck(homeNum) {
+  switch (homeNum) {
+    case 1:
+      return `no home`
+      break;
+    case 2:
+      return `tent`
+      break;
+    case 3:
+      return `shack`
+      break;
+    case 4:
+      return `home`
+      break;
+  }
 }
-function getQuote(number){
+
+function getQuote(number) {
   console.log(number)
-  switch (number){
+  switch (number) {
     case 1:
       return quote1
       break;
     case 2:
       return quote2
       break;
-      case 3:
-        return quote3
-        break;
-      default:
-        return "Something went wrong, so take this text instead."
-        break;
+    case 3:
+      return quote3
+      break;
+    default:
+      return "Something went wrong, so take this text instead."
+      break;
   }
 }
 
@@ -76,11 +99,13 @@ const {
   quote1,
   quote2,
   quote3,
-} =require('./drinkQuotes.json')
+} = require('./drinkQuotes.json')
 const jsonfile = require('jsonfile');
 const fs = require('fs');
 const Discord = require('discord.js');
-const { MessageEmbed } = require('discord.js');
+const {
+  MessageEmbed
+} = require('discord.js');
 const {
   Client,
   Intents
@@ -122,102 +147,186 @@ client.on('messageCreate', async msg => {
       hoursWorked: 0,
       raiseHours: 5,
       wage: minWage,
-      lastUsedVersion: BotVersion
+      lastUsedVersion: BotVersion,
+      home: 1 //1 is no home, 2 would be the next tier of home
     };
   }
   const userStats = guildstats[msg.author.id];
   const args = msg.content.slice(prefix.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
-  if(userStats.lastUsedVersion < BotVersion) { //checks for new version then adds the new stats to their stats.
+  if (userStats.lastUsedVersion < BotVersion) { //checks for new version then adds the new stats to their stats.
     userStats.lastUsedVersion = BotVersion
-  if(userStats.raiseHours>0 === false) userStats.raiseHours = 5
-  if(userStats.wage>0 === false) userStats.wage = minWage
-  if(userStats.lastUsedVersion < BotVersion) userStats.lastUsedVersion = BotVersion
+    if (userStats.raiseHours > 0 === false) userStats.raiseHours = 5
+    if (userStats.wage > 0 === false) userStats.wage = minWage
+    if (userStats.lastUsedVersion < BotVersion) userStats.lastUsedVersion = BotVersion //below is added after version 0.3
+    if (userStats.home > 0 === false) userStats.home = 1
   }
-    switch (command) {
-      case 'work':
-        if (userStats.workingStatus === true) {
-          var workingTime = Date.now()-userStats.lastWorkTime;
-            if(workingTime>=3600000) {
-              var workingTimeRounded = milisToHours(workingTime)     
-              var workingTimeMins = milisToHoursMins(workingTime)
-              userStats.workingStatus = false;
-              var pay = payCalcHours(workingTimeRounded) + payCalcMin(workingTimeMins);
-              userStats.money += pay;
-              userStats.hoursWorked += workingTimeRounded
-              msg.reply('You worked for ' + workingTimeRounded + ' hours, '+ workingTimeMins +' minutes and made $' + pay + '!');
-            } else {
-              var workingTimeRounded = milisToMinutes(workingTime);
-              userStats.workingStatus = false;
-              var pay = payCalcMin(workingTimeRounded)
-              userStats.money += pay
-              userStats.hoursWorked += Math.round((workingTimeRounded/60)*100)/100
-              userStats.hoursWorked = Math.round(userStats.hoursWorked*100)/100
-              msg.reply('You worked for ' + workingTimeRounded + ' minutes and made $' + pay +'!');
-            };
+
+  switch (command) {
+    case 'work':
+      if (userStats.workingStatus === true) {
+        var workingTime = Date.now() - userStats.lastWorkTime;
+        if (workingTime >= 3600000) {
+          var workingTimeRounded = milisToHours(workingTime)
+          var workingTimeMins = milisToHoursMins(workingTime)
+          userStats.workingStatus = false;
+          var pay = payCalcHours(workingTimeRounded) + payCalcMin(workingTimeMins);
+          userStats.money += pay;
+          userStats.hoursWorked += workingTimeRounded
+          msg.reply('You worked for ' + workingTimeRounded + ' hours, ' + workingTimeMins + ' minutes and made $' + pay + '!');
         } else {
-          userStats.lastWorkTime = Date.now();
-          userStats.workingStatus = true;
-          msg.reply('You start your shift.');
-        }
-        break;
-        case 'buy' : 
-        if(parseInt(args[0]) > 0){
-          let amount = parseInt(args[0])
-          if (userStats.money >= amount*mugPrice) {
-            userStats.mugAmount += amount
-            userStats.money -= amount*mugPrice
-            msg.reply(`You bought ${amount} mug's! You now have ${userStats.mugAmount} mug's!`)
-          }
-        } else {
-          msg.reply(`${args[0]} is not a valid amount!`)
-        }
-        break;
-        case 'drink' :
-          if (userStats.mugAmount > 0){
-            quoteSend = getQuote(getRandomIntInclusive(1, 3))
-            userStats.mugAmount--
-            msg.reply(`${quoteSend} You now have ${userStats.mugAmount} mug's`)
-          } else msg.reply(`You do not have any mug!`)
-        break;
-        case 'profile':
-          const mugEmbed = new MessageEmbed()
-          .setColor('#0099ff')
-          .setTitle(`${msg.author.username}'s Profile`)
-          .setAuthor({ name: `${msg.author.username}`, iconURL: msg.author.avatarURL(), url: msg.author.avatarURL() })
-          .setDescription(`Here is ${msg.author.username} profile`)
-          .setThumbnail('https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp')
-          .addFields(
-            { name: 'Mug Bucks', value: `$${userStats.money}`, inline: true },
-            { name: 'Mug Drank', value: `${userStats.mugDrank}`, inline: true },
-            )
-          .addField('Hours Worked', `${userStats.hoursWorked}`, false)
-          .setTimestamp()
-          .setFooter({ text: `${msg.author.username} loves mug!`, iconURL: 'https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp' });
-          msg.channel.send({ embeds: [mugEmbed] });
-          break;
-          case 'shop':
-            const shopEmbed = new MessageEmbed()
-            .setColor('#0099ff')
-            .setTitle(`Magnificent Mug Shop`)
-            .setDescription(`Here is the Magnificent Mug Shop`)
-            .setThumbnail('https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp')
-            .addField('mug', `$${mugPrice}`, false)
-            .setTimestamp()
-            .setFooter({ text: `${msg.author.username} loves mug!`, iconURL: 'https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp' });
-            msg.channel.send({ embeds: [shopEmbed] });
-            break;
-        default:
-            msg.reply('Sussy Baka, nya!')
-          break;
-          if (userStats.hoursWorked > userStats.raiseHours) { //checking if user has worked enought to get a raise.
-          let raiseAmount =  getRandomIntInclusive(1,10)
-          userStats.wage = userStats.wage+raiseAmount
-          userStats.wage = getRandomIntInclusive(50, 200)
-          msg.reply(`You worked for ${userStats.raiseHours} hours and got an ${raiseAmount} raise! You now make ${userStats.wage} per hour!`)
-          }
+          var workingTimeRounded = milisToMinutes(workingTime);
+          userStats.workingStatus = false;
+          var pay = payCalcMin(workingTimeRounded)
+          userStats.money += pay
+          userStats.hoursWorked += Math.round((workingTimeRounded / 60) * 100) / 100
+          userStats.hoursWorked = Math.round(userStats.hoursWorked * 100) / 100
+          msg.reply('You worked for ' + workingTimeRounded + ' minutes and made $' + pay + '!');
+        };
+      } else {
+        userStats.lastWorkTime = Date.now();
+        userStats.workingStatus = true;
+        msg.reply('You start your shift.');
+      }
+      break;
+    case 'buy':
+      switch (args[0]) {
+        case 'tent':
+          console.log(`tent`)
+          if (userStats.money >= 1000) {
+            if (userStats.home > 1) {
+             if (userStats.home = 2) {
+               msg.reply(`Your home is already a tent!`)
+             } else {
+              msg.reply(`Your home is already a ${homeCheck(userStats.home)}!`)
+             }
+            } else if (userStats.home >1 == false) {
+              userStats.money - 1000
+              userStats.home = 2
+              msg.reply(`Your house is now a tent!`) 
+            }
+      }  else if (userStats.money < 1000 ) {
+        msg.reply(`You have $${userStats.money}, you need $${1000-userStats.money} more to buy a tent.`)
+      } break
+        case 'mug':
+          console.log(`mug`)
+          if (parseInt(args[1]) > 0) {
+            let amount = parseInt(args[1])
+            if (userStats.money >= amount * mugPrice) {
+              userStats.mugAmount += amount
+              userStats.money -= amount * mugPrice
+              msg.reply(`You bought ${amount} mug's! You now have ${userStats.mugAmount} mug's!`)
+              break
+            }
+          } else {
+            msg.reply(`${args[1]} is not a valid amount!`)
+            break
+              }  
+         default:
+           msg.reply(`You did not specify an item to buy, or ${args[0]} is not a buyable item.`)
+            
+      }
+      break;
+    case 'drink':
+      if (userStats.mugAmount > 0) {
+        quoteSend = getQuote(getRandomIntInclusive(1, 3))
+        userStats.mugAmount--
+        msg.reply(`${quoteSend} You now have ${userStats.mugAmount} mug's`)
+        userStats.mugDrank++
+      } else msg.reply(`You do not have any mug!`)
+      break;
+    case 'profile':
+      const mugEmbed = new MessageEmbed()
+        .setColor('#0099ff')
+        .setTitle(`${msg.author.username}'s Profile`)
+        .setAuthor({
+          name: `${msg.author.username}`,
+          iconURL: msg.author.avatarURL(),
+          url: msg.author.avatarURL()
+        })
+        .setDescription(`Here is ${msg.author.username} profile`)
+        .setThumbnail(msg.author.displayAvatarURL())
+        .addFields({
+          name: 'Mug Bucks',
+          value: `$${userStats.money}`,
+          inline: true
+        }, {
+          name: 'Mug Drank',
+          value: `${userStats.mugDrank}`,
+          inline: true
+        }, {
+          name: 'home',
+          value: `${homeCheck(userStats.home)}`,
+          inline: true
+        })
+        .addFields({
+          name: 'Hours Worked',
+          value: `${userStats.hoursWorked}`,
+          inline: true
+        }, {
+          name: 'Wage',
+          value: `${userStats.wage}`,
+          inline: true
+        }, )
+        .setTimestamp()
+        .setFooter({
+          text: `${msg.author.username} loves mug!`,
+          iconURL: 'https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp'
+        });
+      msg.channel.send({
+        embeds: [mugEmbed]
+      });
+      break;
+    case 'shop':
+      const shopEmbed = new MessageEmbed()
+        .setColor('#0099ff')
+        .setTitle(`Magnificent Mug Shop`)
+        .setDescription(`Here is the Magnificent Mug Shop`)
+        .setThumbnail('https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp')
+        .addField('12oz can of Mug', `$${mugPrice}`, false)
+        .addField('Tent', `$1,000`, true)
+        .addFields({
+          name: 'Shack',
+          value: `$5,000`,
+          inline: true
+        }, {
+          name: 'House',
+          value: `$10,000`,
+          inline: true
+        }, )
+        .setTimestamp()
+        .setFooter({
+          text: `${msg.author.username} loves mug!`,
+          iconURL: 'https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp'
+        });
+      msg.channel.send({
+        embeds: [shopEmbed]
+      });
+      break;
+    default:
+      break;
+  }
+  if (userStats.hoursWorked > userStats.raiseHours) { //checking if user has worked enought to get a raise.
+    if (userStats.raiseHours < 1000) {
+      let raiseAmount = getRandomIntInclusive(1, 10)
+      userStats.wage = userStats.wage + raiseAmount
+      msg.reply(`You worked for ${userStats.raiseHours} hours and got an ${raiseAmount} raise! You now make ${userStats.wage} per hour!`)
+      userStats.raiseHours = userStats.raiseHours + getRandomIntInclusive(50, 200)
+    } else
+    if (userStats.raiseHours < 2000 && userStats.raiseHours > 1000) {
+      let raiseAmount = getRandomIntInclusive(10, 15)
+      userStats.wage = userStats.wage + raiseAmount
+      msg.reply(`You worked for ${userStats.raiseHours} hours and got an ${raiseAmount} raise! You now make ${userStats.wage} per hour!`)
+      userStats.raiseHours = userStats.raiseHours + getRandomIntInclusive(100, 300)
+    } else
+    if (userStats.raiseHours < 3000 && userStats.raiseHours > 2000) {
+      let raiseAmount = getRandomIntInclusive(20, 30)
+      userStats.wage = userStats.wage + raiseAmount
+      msg.reply(`You worked for ${userStats.raiseHours} hours and got an ${raiseAmount} raise! You now make ${userStats.wage} per hour!`)
+      userStats.raiseHours = userStats.raiseHours + getRandomIntInclusive(100, 500)
     }
-  userStats.money=(Math.round(userStats.money*100))/100
+  }
+  userStats.money = (Math.round(userStats.money * 100)) / 100
   saveStatsData()
   saveMsgData()
 })
