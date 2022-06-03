@@ -38,17 +38,27 @@ function getRandomIntInclusive(min, max) {
   max = Math.floor(max)
   return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
 }
+function raiseCalc() {
+  let raiseAmount =  getRandomIntInclusive(1,10)
+  userStats.wage = userStats.wage+raiseAmount
+  userStats.wage = getRandomIntInclusive(50, 200)
+  msg.reply(`You worked for ${userStats.raiseHours} hours and got an ${raiseAmount} raise! You now make ${userStats.wage} per hour!`)
+}
+function newStatAdding() {
+  
+}
 function getQuote(number){
   console.log(number)
   switch (number){
     case 1:
       return quote1
-      console.log(quote1)
       break;
     case 2:
       return quote2
-      console.log(quote2)
       break;
+      case 3:
+        return quote3
+        break;
       default:
         return "Something went wrong, so take this text instead."
         break;
@@ -56,7 +66,7 @@ function getQuote(number){
 }
 
 const mugPrice = 2
-const minWage = 13
+const minWage = 5
 const {
   prefix,
   token,
@@ -65,6 +75,7 @@ const {
 const {
   quote1,
   quote2,
+  quote3,
 } =require('./drinkQuotes.json')
 const jsonfile = require('jsonfile');
 const fs = require('fs');
@@ -109,12 +120,20 @@ client.on('messageCreate', async msg => {
       mugOwned: 0,
       money: 0.00,
       hoursWorked: 0,
+      raiseHours: 5,
+      wage: minWage,
+      lastUsedVersion: BotVersion
     };
   }
   const userStats = guildstats[msg.author.id];
-  if (userStats.hoursWorked >= 0 !== true) userStats.hoursWorked = 0
   const args = msg.content.slice(prefix.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
+  if(userStats.lastUsedVersion < BotVersion) { //checks for new version then adds the new stats to their stats.
+    userStats.lastUsedVersion = BotVersion
+  if(userStats.raiseHours>0 === false) userStats.raiseHours = 5
+  if(userStats.wage>0 === false) userStats.wage = minWage
+  if(userStats.lastUsedVersion < BotVersion) userStats.lastUsedVersion = BotVersion
+  }
     switch (command) {
       case 'work':
         if (userStats.workingStatus === true) {
@@ -156,7 +175,7 @@ client.on('messageCreate', async msg => {
         break;
         case 'drink' :
           if (userStats.mugAmount > 0){
-            quoteSend = getQuote(getRandomIntInclusive(1, 2))
+            quoteSend = getQuote(getRandomIntInclusive(1, 3))
             userStats.mugAmount--
             msg.reply(`${quoteSend} You now have ${userStats.mugAmount} mug's`)
           } else msg.reply(`You do not have any mug!`)
@@ -189,11 +208,16 @@ client.on('messageCreate', async msg => {
             msg.channel.send({ embeds: [shopEmbed] });
             break;
         default:
-          case 'amugus':
             msg.reply('Sussy Baka, nya!')
           break;
-          return;
+          if (userStats.hoursWorked > userStats.raiseHours) { //checking if user has worked enought to get a raise.
+          let raiseAmount =  getRandomIntInclusive(1,10)
+          userStats.wage = userStats.wage+raiseAmount
+          userStats.wage = getRandomIntInclusive(50, 200)
+          msg.reply(`You worked for ${userStats.raiseHours} hours and got an ${raiseAmount} raise! You now make ${userStats.wage} per hour!`)
+          }
     }
+  userStats.money=(Math.round(userStats.money*100))/100
   saveStatsData()
   saveMsgData()
 })
