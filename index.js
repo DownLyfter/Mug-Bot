@@ -25,16 +25,16 @@ function milisToHoursMins(milis) {
   return mins
 }
 
-function payCalcMin(mins) {
+function payCalcMin(mins, wage) {
   var hours = mins / 60;
-  var Pay = hours * minWage;
+  var Pay = hours * wage;
   var payMult = Math.round(Pay * 100);
   var payRound = payMult / 100;
   return payRound;
 };
 
-function payCalcHours(hours) {
-  var Pay = hours * minWage;
+function payCalcHours(hours, wage) {
+  var Pay = hours * wage;
   var payMult = Math.round(Pay * 100);
   var payRound = payMult / 100;
   return payRound;
@@ -110,6 +110,7 @@ const {
   Client,
   Intents
 } = require('discord.js');
+const { error } = require('console');
 const client = new Client({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]
 });
@@ -127,6 +128,7 @@ client.once('ready', () => {
   console.log('Bot is online.');
 });
 client.on('messageCreate', async msg => {
+  if(msg.author.bot) return;
   if (msg.guild.id !== '886787687699333190') return;
   if (msg.content.startsWith(prefix) !== true) return;
   msgNumber++
@@ -161,8 +163,50 @@ client.on('messageCreate', async msg => {
     if (userStats.lastUsedVersion < BotVersion) userStats.lastUsedVersion = BotVersion //below is added after version 0.3
     if (userStats.home > 0 === false) userStats.home = 1
   }
-
+  if (msg.mentions.members.first() !== undefined ) {
+    let mentionID = msg.mentions.users.first().id
+    let mentionName = msg.mentions.users.first().username
+    let mentionGuildStats = stats[msg.guild.id]
+    let mentionStats = mentionGuildStats[msg.mentions.users.first().id]
+    if (mentionID in guildstats === false) {
+      console.log(mentionName + ' has no server stats. Creating new fresh stats.');
+      guildstats[msg.author.id] = {
+        workingStatus: false,
+        lastWorkTime: 0,
+        mugAmount: 0,
+        mugDrank: 0,
+        mugOwned: 0,
+        money: 0.00,
+        hoursWorked: 0,
+        raiseHours: 5,
+        wage: minWage,
+        lastUsedVersion: BotVersion,
+        home: 1 //1 is no home, 2 would be the next tier of home
+      };
+      saveStatsData()
+      let mentionStats = mentionGuildStats[msg.mentions.users.first().id]
+    }
+  }
   switch (command) {
+    case 'help': 
+    const helpEmbed = new MessageEmbed()
+    .setColor('#0099ff')
+    .setTitle(`The Help Menu`)
+    .setThumbnail('https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp')
+    .addField('shop', `Displays the mug shop.`, true)
+    .addField('work', `Start or stop working.`, true)
+    .addField('buy', `Purcase a shop item.`, true)
+    .addField('drink', `Drink a mug.`, true)
+    .addField('profile', `Display your statistics.`, true)
+    .setTimestamp()
+    .setFooter({
+      text: `${msg.author.username} loves mug!`,
+      iconURL: 'https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp'
+    });
+  msg.channel.send({
+    embeds: [helpEmbed]
+  });
+  break;
     case 'work':
       if (userStats.workingStatus === true) {
         var workingTime = Date.now() - userStats.lastWorkTime;
@@ -170,14 +214,14 @@ client.on('messageCreate', async msg => {
           var workingTimeRounded = milisToHours(workingTime)
           var workingTimeMins = milisToHoursMins(workingTime)
           userStats.workingStatus = false;
-          var pay = payCalcHours(workingTimeRounded) + payCalcMin(workingTimeMins);
+          var pay = payCalcHours(workingTimeRounded, userStats.wage) + payCalcMin(workingTimeMins, userStats.wage);
           userStats.money += pay;
           userStats.hoursWorked += workingTimeRounded
           msg.reply('You worked for ' + workingTimeRounded + ' hours, ' + workingTimeMins + ' minutes and made $' + pay + '!');
         } else {
           var workingTimeRounded = milisToMinutes(workingTime);
           userStats.workingStatus = false;
-          var pay = payCalcMin(workingTimeRounded)
+          var pay = payCalcMin(workingTimeRounded, userStats.wage)
           userStats.money += pay
           userStats.hoursWorked += Math.round((workingTimeRounded / 60) * 100) / 100
           userStats.hoursWorked = Math.round(userStats.hoursWorked * 100) / 100
@@ -191,16 +235,35 @@ client.on('messageCreate', async msg => {
       break;
     case 'buy':
       switch (args[0]) {
+        case 'shack': 
+        if (userStats.money >= 5000) {
+          if (userStats.home > 1) { //checks if they already have a home
+           if (userStats.home > 2) {  //checks if they already own the home they are trying to buy
+            msg.reply(`Your home is already a ${homeCheck(userStats.home)}!`)
+           } else {
+            userStats.money - 5000
+            userStats.home = 3
+            msg.reply(`Your house is now a shack!`) 
+           }
+          } else {
+            userStats.money - 5000
+            userStats.home = 3
+            msg.reply(`Your house is now a shack!`) 
+          }
+    }  else if (userStats.money < 5000 ) {
+      msg.reply(`You have $${userStats.money}, you need $${5000-userStats.money} more to buy a tent.`)
+    } break
         case 'tent':
-          console.log(`tent`)
           if (userStats.money >= 1000) {
             if (userStats.home > 1) {
-             if (userStats.home = 2) {
-               msg.reply(`Your home is already a tent!`)
-             } else {
+             if (userStats.home > 1) {
               msg.reply(`Your home is already a ${homeCheck(userStats.home)}!`)
+             } else {
+              userStats.money - 1000
+              userStats.home = 2
+              msg.reply(`Your house is now a tent!`) 
              }
-            } else if (userStats.home >1 == false) {
+            } else {
               userStats.money - 1000
               userStats.home = 2
               msg.reply(`Your house is now a tent!`) 
@@ -236,7 +299,53 @@ client.on('messageCreate', async msg => {
       } else msg.reply(`You do not have any mug!`)
       break;
     case 'profile':
-      const mugEmbed = new MessageEmbed()
+      if (msg.mentions.members.first()) {
+        const mentionID = msg.mentions.users.first().id
+        const mentionName = msg.mentions.users.first().username
+        const mentionGuildStats = stats[msg.guild.id]
+        const mentionStats = mentionGuildStats[msg.mentions.users.first().id]
+        const mugEmbed = new MessageEmbed()
+        .setColor('#0099ff')
+        .setTitle(`${msg.mentions.users.first().username}'s Profile`)
+        .setAuthor({
+          name: `${msg.mentions.users.first().username}`,
+          iconURL: msg.mentions.members.first().avatarURL(),
+          url: msg.mentions.members.first().avatarURL()
+        })
+        .setDescription(`Here is ${msg.mentions.users.first().username} profile`)
+        .setThumbnail(msg.mentions.members.first().displayAvatarURL())
+        .addFields({
+          name: 'Mug Bucks',
+          value: `$${mentionStats.money}`,
+          inline: true
+        }, {
+          name: 'Mug Drank',
+          value: `${mentionStats.mugDrank}`,
+          inline: true
+        }, {
+          name: 'home',
+          value: `${homeCheck(mentionStats.home)}`,
+          inline: true
+        })
+        .addFields({
+          name: 'Hours Worked',
+          value: `${mentionStats.hoursWorked}`,
+          inline: true
+        }, {
+          name: 'Wage',
+          value: `${mentionStats.wage}`,
+          inline: true
+        }, )
+        .setTimestamp()
+        .setFooter({
+          text: `${msg.mentions.users.first().username} loves mug!`,
+          iconURL: 'https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp'
+        });
+        msg.channel.send({
+          embeds: [mugEmbed]
+        });
+      } else {
+      const mugEmbed1 = new MessageEmbed()
         .setColor('#0099ff')
         .setTitle(`${msg.author.username}'s Profile`)
         .setAuthor({
@@ -273,9 +382,11 @@ client.on('messageCreate', async msg => {
           text: `${msg.author.username} loves mug!`,
           iconURL: 'https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp'
         });
-      msg.channel.send({
-        embeds: [mugEmbed]
-      });
+        msg.channel.send({
+          embeds: [mugEmbed1]
+        });
+      }
+     
       break;
     case 'shop':
       const shopEmbed = new MessageEmbed()
