@@ -87,43 +87,122 @@ function getQuote(number) {
       break;
   }
 }
+
 function slotsRandomizer() {
   let icons = []
   let loops = 1
   let slotResults = []
- while(loops <= 3) {
-  loops++
-  icons[loops-2] = getRandomIntInclusive(1, 3)
- }
- loops = 1
- while(loops <= 3){
-  loops++
-  switch (icons[loops-2]) {
-    case 1:
-      slotResults[loops-2] = mugEmoji
-      break;
-    case 2: 
-      slotResults[loops-2] = awEmoji
-      break;
-    case 3:
-      slotResults[loops-2] = barqsEmoji
-      break;
-    default:
-      slotResults[loops-2] = mugEmoji
+  while (loops <= 3) {
+    loops++
+    icons[loops - 2] = getRandomIntInclusive(1, 3)
   }
- }
- return slotResults
+  loops = 1
+  while (loops <= 3) {
+    loops++
+    switch (icons[loops - 2]) {
+      case 1:
+        slotResults[loops - 2] = mugEmoji
+        break;
+      case 2:
+        slotResults[loops - 2] = awEmoji
+        break;
+      case 3:
+        slotResults[loops - 2] = barqsEmoji
+        break;
+      default:
+        slotResults[loops - 2] = mugEmoji
+    }
+  }
+  return slotResults
 }
-function removeStringifyQuotes(text){ //removes the brackets commas and the double quotes.
- let temp = text.replace(/\"/g, "")
- temp = temp.replace(/[\[\]']+/g,'')
- temp = temp.replace(/,/g, '')
- return(temp)
+
+function removeStringifyQuotes(text) { //removes the brackets commas and the double quotes.
+  let temp = text.replace(/\"/g, "")
+  temp = temp.replace(/[\[\]']+/g, '')
+  temp = temp.replace(/,/g, '')
+  return (temp)
 }
+
 function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+function cardDraw(cards) {
+  let loops = 0
+  let bruh = []
+  while(cards > loops) {
+    bruh[loops] = [getRandomIntInclusive(1, 13), getRandomIntInclusive(1, 4)]
+    loops++
+  }
+  return bruh
+}
+
+function getCardNames(cardDraw) {
+  let drawAmount = cardDraw.length
+  let cardDrawflat = cardDraw.flat()
+  let looptimes = drawAmount
+  let loops = 0
+  let card = []
+  while(looptimes > loops) {
+    switch (cardDrawflat[loops]) { //Gets the cards value 
+      case 1:
+        card[loops] = 2
+        break
+      case 2:
+        card[loops] = 3
+        break
+      case 3:
+        card[loops] = 4
+        break
+      case 4:
+        card[loops] = 5
+        break
+      case 5:
+        card[loops] = 6
+        break
+      case 6:
+        card[loops] = 7
+        break
+      case 7:
+        card[loops] = 8
+        break
+      case 8:
+        card[loops] = 9
+        break
+      case 9:
+        card[loops] = 10
+        break
+      case 10:
+        card[loops] = 'Jack'
+        break
+      case 11:
+        card[loops] = 'Queen'
+        break
+      case 12:
+        card[loops] = 'King'
+        break
+        case 13:
+          card[loops] = 'Ace'
+    }
+    switch (cardDrawflat[loops+1]) {
+      case 1:
+        card[loops+1] = 'spades'
+        break
+      case 2:
+        card[loops+1] = 'clubs'
+        break
+      case 3:
+        card[loops+1] = 'hearts'
+        break
+      case 4:
+        card[loops+1] = 'diamonds'
+        break
+    }
+    loops++
+  return card
+  }
 }
 const mugPrice = 2
 const minWage = 5
@@ -153,12 +232,16 @@ const {
 const {
   error
 } = require('console');
-const { defaultMaxListeners } = require('events');
+const {
+  defaultMaxListeners
+} = require('events');
+const { lookupService } = require('dns');
 const client = new Client({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]
 });
 const rawData = fs.readFileSync('stats.json', 'utf8')
 const data = JSON.parse(rawData)
+
 var msgNumber = parseInt(data.messages)
 var stats = {};
 var quoteSend
@@ -170,10 +253,14 @@ if (fs.existsSync('mugstats.json')) {
 client.once('ready', () => {
   console.log('Bot is online.');
 });
+
+
 client.on('guildMemberAdd', member => {
   console.log('User ' + member.user.username + 'has join ther server!')
 });
 client.on('messageCreate', async msg => {
+  const filter = collected => collected.author.id === msg.author.id;
+ 
   if (msg.author.bot) return;
   if (msg.guild.id !== '886787687699333190') return;
   if (msg.content.startsWith(prefix) !== true) return;
@@ -197,7 +284,9 @@ client.on('messageCreate', async msg => {
       wage: minWage,
       lastUsedVersion: BotVersion,
       home: 1, //1 is no home, 2 would be the next tier of home
-      items: {scratchTickets:0,},
+      items: {
+      scratchTickets: 0,
+      },
     };
   }
 
@@ -210,14 +299,16 @@ client.on('messageCreate', async msg => {
     if (userStats.wage > 0 === false) userStats.wage = minWage
     if (userStats.lastUsedVersion < BotVersion) userStats.lastUsedVersion = BotVersion //below is added after version 0.3
     if (userStats.home > 0 === false) userStats.home = 1
-    if (Array.isArray(userStats.items) === false) userStats.items = {scratchTickets:0,}
+    if (Array.isArray(userStats.items) === false) userStats.items = {
+      scratchTickets: 0,
+    }
   }
   if (msg.mentions.members.first() !== undefined) {
     let mentionID = msg.mentions.users.first().id
     let mentionName = msg.mentions.users.first().username
     let mentionGuildStats = stats[msg.guild.id]
     let mentionStats = mentionGuildStats[msg.mentions.users.first().id]
-    if (mentionID in guildstats === false) {   
+    if (mentionID in guildstats === false) {
       console.log(mentionName + ' has no server stats. Creating new fresh stats.');
       guildstats[msg.author.id] = {
         workingStatus: false,
@@ -230,32 +321,70 @@ client.on('messageCreate', async msg => {
         raiseHours: 5,
         wage: minWage,
         lastUsedVersion: BotVersion,
-        home: 1 //1 is no home, 2 would be the next tier of home
+        home: 1, //1 is no home, 2 would be the next tier of home
+        items: {
+          scratchTickets: 0,
+        },
       };
       saveStatsData()
       let mentionStats = mentionGuildStats[msg.mentions.users.first().id]
     }
   }
+
   switch (command) {
-    case 'test':
-      msg.reply(`${mugEmoji} ${awEmoji} ${barqsEmoji}`)
-      break;
-      case 'use':
+    case 'draw':
+      switch (args[0]) {
+        case 'card':
+          let drawAmount = 0 
+          let loops = 0
+          let card = []
+          let msgContent = `You draw a `
+          if (parseInt(args[1]) > 1) {
+            if (parseInt(args[1]) > 4) {
+              msg.reply('please use a value less then 5.')
+              return
+            }
+            drawAmount = parseInt(args[1])
+            drawAmount++
+            if (parseInt(args[1]) === 4) {
+              drawAmount++
+            }
+          } else {
+            drawAmount = 1
+          }
+          while (drawAmount >= loops) {
+            console.log(loops)
+            card[loops]  = getCardNames(cardDraw(drawAmount)) 
+            let cardFlat = card.flat()
+            msgContent += `${cardFlat[loops]} of ${cardFlat[loops+1]}`
+            if (drawAmount === loops + 2) {
+              msgContent += `, and a `
+            } else if (drawAmount > loops + 2) {
+              msgContent += `, a `
+            } 
+            loops++
+            loops++
+          }
+          msg.reply(msgContent)
+          break
+        default:
+        msg.reply(`You did not specify an item to draw, or specified an invalid item.`) 
+      } break
+    case 'use':
       switch (args[0]) {
         case 'scratch':
           if (args[1] === 'ticket') {
             if (userStats.items.scratchTickets > 0) {
               let winChance = getRandomIntInclusive(1, 10)
-                switch (winChance) { 
-                  case 1:
-                    let winAmount = getRandomIntInclusive(100, 5000)
-                    userStats.money +=  winAmount
-                    userStats.items.scratchTickets --
-                    msg.reply(`You won $${winAmount}! you now have ${userStats.money}`)
-                    msg.reply(JSON.stringify(userStats.items.scratchTickets))
-                }
-            } else 
-            msg.reply(`You do not have any scratch tickets.`)
+              switch (winChance) {
+                case 1:
+                  let winAmount = getRandomIntInclusive(100, 5000)
+                  userStats.money += winAmount
+                  userStats.items.scratchTickets--
+                  msg.reply(`You won $${winAmount}! you now have ${userStats.money}`)
+              }
+            } else
+              msg.reply(`You do not have any scratch tickets.`)
           } else msg.reply(`Did you mean Scratch ticked?`)
           break
         default:
@@ -263,76 +392,76 @@ client.on('messageCreate', async msg => {
           break;
       }
       break;
-    case 'play': 
+    case 'play':
       switch (args[0]) {
         case 'slots':
           if (Math.floor(parseInt(args[1])) > 0) {
             let betAmount = parseInt(args[1])
-            if (userStats.money >= betAmount)  {
+            if (userStats.money >= betAmount) {
               userStats.money -= betAmount
               var winStatus = 'no'
               let slotRandom1 = slotsRandomizer()
-                let slots = JSON.stringify(slotRandom1)
-                slots = removeStringifyQuotes(slots)
-                let slotRandom2 = slotsRandomizer()
-                let slots2 = JSON.stringify(slotRandom2)
-                slots2 = removeStringifyQuotes(slots2)
-                let slotRandom3 = slotsRandomizer()
-                let slots3 = JSON.stringify(slotRandom3)
-                slots3 = removeStringifyQuotes(slots3)
-                let slotRandom4 = slotsRandomizer()
-                let slots4 = JSON.stringify(slotRandom4)
-                slots4 = removeStringifyQuotes(slots4)
-                let slotRandom5 = slotsRandomizer()
-                let slots5 = JSON.stringify(slotRandom5)
-                slots5 = removeStringifyQuotes(slots5)
-                let slotRandom6 = slotsRandomizer()
-                let slots6 = JSON.stringify(slotRandom6)
-                slots6 = removeStringifyQuotes(slots6)
-              
-                if (slotRandom6[0] === slotRandom6[1]) {
-                  winStatus = 'win'
-                  if(slotRandom6[0] === slotRandom6[2]) {
-                    winStatus = 'big'
-                  }
-                }
+              let slots = JSON.stringify(slotRandom1)
+              slots = removeStringifyQuotes(slots)
+              let slotRandom2 = slotsRandomizer()
+              let slots2 = JSON.stringify(slotRandom2)
+              slots2 = removeStringifyQuotes(slots2)
+              let slotRandom3 = slotsRandomizer()
+              let slots3 = JSON.stringify(slotRandom3)
+              slots3 = removeStringifyQuotes(slots3)
+              let slotRandom4 = slotsRandomizer()
+              let slots4 = JSON.stringify(slotRandom4)
+              slots4 = removeStringifyQuotes(slots4)
+              let slotRandom5 = slotsRandomizer()
+              let slots5 = JSON.stringify(slotRandom5)
+              slots5 = removeStringifyQuotes(slots5)
+              let slotRandom6 = slotsRandomizer()
+              let slots6 = JSON.stringify(slotRandom6)
+              slots6 = removeStringifyQuotes(slots6)
+              if (slotRandom6[0] === slotRandom6[2]) {
+                winStatus = 'win'
+              }
+              if (slotRandom6[0] === slotRandom6[1]) {
+                winStatus = 'win'
                 if (slotRandom6[0] === slotRandom6[2]) {
-                  winStatus = 'win'
+                  winStatus = 'big'
                 }
-                let msgEdit = await msg.channel.send(slots)
-                await sleep(1000)
-                msgEdit.edit(slots2)
-                await sleep(1200)
-                msgEdit.edit(slots3)
-                await sleep(1200)
-                msgEdit.edit(slots4)
-                await sleep(1200)
-                msgEdit.edit(slots5)
-                await sleep(1200)
-                msgEdit.edit(slots6)          
-                switch (winStatus) {
-                  case 'no':
-                    msg.reply('You lost.')
-                    break;
-                  case 'win':
-                    userStats.money += betAmount*2
-                    msg.reply(`You won ${betAmount*2}!`)
-                    break;
-                  case 'big':
-                    msg.reply(`You won ${betAmount*10}!`)
-                }
+              }
+              let msgEdit = await msg.channel.send(slots)
+              await sleep(1000)
+              msgEdit.edit(slots2)
+              await sleep(1200)
+              msgEdit.edit(slots3)
+              await sleep(1200)
+              msgEdit.edit(slots4)
+              await sleep(1200)
+              msgEdit.edit(slots5)
+              await sleep(1200)
+              msgEdit.edit(slots6)
+              switch (winStatus) {
+                case 'no':
+                  msg.reply('You lost.')
+                  break;
+                case 'win':
+                  userStats.money += betAmount * 2
+                  msg.reply(`You won ${betAmount*2}!`)
+                  break;
+                case 'big':
+                  userStats.money += betAmount*10
+                  msg.reply(`You won ${betAmount*10}!`)
+              }
             } else {
-             msg.reply(`You do not have $${betAmount} to gamble away.`)
+              msg.reply(`You do not have $${betAmount} to gamble away.`)
             }
-            } else {
-              msg.reply(`${args[1]} is not a valid amount.`)
-            }
-        break;
+          } else {
+            msg.reply(`${args[1]} is not a valid amount.`)
+          }
+          break;
         default:
-        break;
+          break;
       }
-    
-    break;
+
+      break;
     case 'help':
       const helpEmbed = new MessageEmbed()
         .setColor('#0099ff')
@@ -343,6 +472,8 @@ client.on('messageCreate', async msg => {
         .addField('buy', `Purcase a shop item.`, true)
         .addField('drink', `Drink a mug.`, true)
         .addField('profile', `Display your statistics.`, true)
+        .addField('Play', 'Slots, and other games.', false)
+        .addField('Use', 'Use an item.', true)
         .setTimestamp()
         .setFooter({
           text: `${msg.author.username} loves mug!`,
