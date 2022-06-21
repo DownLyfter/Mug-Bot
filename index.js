@@ -65,7 +65,7 @@ function homeCheck(homeNum) {
       return `shack`
       break;
     case 4:
-      return `home`
+      return `house`
       break;
   }
 }
@@ -268,13 +268,10 @@ client.once('ready', () => {
   console.log('Bot is online.');
 });
 
-
 client.on('guildMemberAdd', member => {
-  console.log('User ' + member.user.username + 'has join ther server!')
+  console.log('User ' + member.user.username + ' has join ther server!')
 });
 client.on('messageCreate', async msg => {
-  const filter = collected => collected.author.id === msg.author.id;
-
   if (msg.author.bot) return;
   if (msg.guild.id !== '886787687699333190') return;
   if (msg.content.startsWith(prefix) !== true) return;
@@ -542,22 +539,41 @@ client.on('messageCreate', async msg => {
           break
         case 'tent':
           if (userStats.money >= 1000) {
-            if (userStats.home > 1) {
-              if (userStats.home > 1) {
-                msg.reply(`Your home is already a ${homeCheck(userStats.home)}!`)
-              } else {
-                userStats.money - 1000
-                userStats.home = 2
-                msg.reply(`Your house is now a tent!`)
-              }
-            } else {
-              userStats.money - 10
-              userStats.home = 2
-              msg.reply(`Your house is now a tent!`)
+            if (userStats.home >= 2) {
+              msg.reply(`Your home is already a ${homeCheck(userStats.home)}`)
+              return
             }
-          } else if (userStats.money < 1000) {
-            msg.reply(`You have $${userStats.money}, you need $${1000-userStats.money} more to buy a tent.`)
+            userStats.money -= 1000
+            userStats.home =2
+            msg.reply(`You home is now a tent.`)
+          } else {
+            msg.reply(`You have $${userStats.money}, you need $${1000-userStats.money} to buy a tent.`)
           }
+          break
+          case 'shack':
+            if (userStats.money >= 5000) {
+              if (userStats.home >= 3) {
+                msg.reply(`Your home is already a ${homeCheck(userStats.home)}`)
+                break
+              }
+              userStats.money -= 5000
+              userStats.home = 3
+              msg.reply('Your home is now a shack!')
+            } else {
+              msg.reply(`You have $${userStats.money}, you need $${5000-userStats.money} more to buy a shack.`)
+            }
+          case 'house':
+           if (userStats.money >= 10000) {
+            if (userStats.home >= 4) {
+              msg.reply(`Your home is already a ${homeCheck(userStats.home)}.`)
+              return
+            }
+            userStats.money -= 10000
+            userStats.home = 4
+            msg.reply(`Your home is now a house.`)
+           } else {
+            msg.reply(`You have $${userStats.money}, you need $${10000-userStats.money} more to buy a house.`)
+           }
           break
         case 'mug':
           console.log(`mug`)
