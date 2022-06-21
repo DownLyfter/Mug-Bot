@@ -132,7 +132,7 @@ function sleep(ms) {
 function cardDraw(cards) {
   let loops = 0
   let bruh = []
-  while(cards > loops) {
+  while (cards > loops) {
     bruh[loops] = [getRandomIntInclusive(1, 13), getRandomIntInclusive(1, 4)]
     loops++
   }
@@ -145,7 +145,7 @@ function getCardNames(cardDraw) {
   let looptimes = drawAmount
   let loops = 0
   let card = []
-  while(looptimes > loops) {
+  while (looptimes > loops) {
     switch (cardDrawflat[loops]) { //Gets the cards value 
       case 1:
         card[loops] = 2
@@ -183,25 +183,25 @@ function getCardNames(cardDraw) {
       case 12:
         card[loops] = 'King'
         break
-        case 13:
-          card[loops] = 'Ace'
+      case 13:
+        card[loops] = 'Ace'
     }
-    switch (cardDrawflat[loops+1]) {
+    switch (cardDrawflat[loops + 1]) {
       case 1:
-        card[loops+1] = 'spades'
+        card[loops + 1] = 'spades'
         break
       case 2:
-        card[loops+1] = 'clubs'
+        card[loops + 1] = 'clubs'
         break
       case 3:
-        card[loops+1] = 'hearts'
+        card[loops + 1] = 'hearts'
         break
       case 4:
-        card[loops+1] = 'diamonds'
+        card[loops + 1] = 'diamonds'
         break
     }
     loops++
-  return card
+    return card
   }
 }
 const mugPrice = 2
@@ -235,7 +235,12 @@ const {
 const {
   defaultMaxListeners
 } = require('events');
-const { lookupService } = require('dns');
+const {
+  lookupService
+} = require('dns');
+const {
+  parse
+} = require('path');
 const client = new Client({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]
 });
@@ -243,6 +248,7 @@ const rawData = fs.readFileSync('stats.json', 'utf8')
 const data = JSON.parse(rawData)
 
 var msgNumber = parseInt(data.messages)
+var deck = []
 var stats = {};
 var quoteSend
 if (fs.existsSync('mugstats.json')) {
@@ -260,7 +266,7 @@ client.on('guildMemberAdd', member => {
 });
 client.on('messageCreate', async msg => {
   const filter = collected => collected.author.id === msg.author.id;
- 
+
   if (msg.author.bot) return;
   if (msg.guild.id !== '886787687699333190') return;
   if (msg.content.startsWith(prefix) !== true) return;
@@ -286,6 +292,7 @@ client.on('messageCreate', async msg => {
       home: 1, //1 is no home, 2 would be the next tier of home
       items: {
       scratchTickets: 0,
+      Deck: [],
       },
     };
   }
@@ -302,6 +309,7 @@ client.on('messageCreate', async msg => {
     if (Array.isArray(userStats.items) === false) userStats.items = {
       scratchTickets: 0,
     }
+    userStats.deck = [] //version 0.5
   }
   if (msg.mentions.members.first() !== undefined) {
     let mentionID = msg.mentions.users.first().id
@@ -323,53 +331,47 @@ client.on('messageCreate', async msg => {
         lastUsedVersion: BotVersion,
         home: 1, //1 is no home, 2 would be the next tier of home
         items: {
-          scratchTickets: 0,
+        scratchTickets: 0,
+        deck: []  
         },
       };
       saveStatsData()
       let mentionStats = mentionGuildStats[msg.mentions.users.first().id]
     }
   }
-
   switch (command) {
-    case 'draw':
+    case 'draw': 
       switch (args[0]) {
         case 'card':
-          let drawAmount = 0 
+          let drawAmount = 0
           let loops = 0
           let card = []
           let msgContent = `You draw a `
-          if (parseInt(args[1]) > 1) {
-            if (parseInt(args[1]) > 4) {
-              msg.reply('please use a value less then 5.')
-              return
-            }
+          if (parseInt(args[1]) >= 0) {
             drawAmount = parseInt(args[1])
-            drawAmount++
-            if (parseInt(args[1]) === 4) {
-              drawAmount++
-            }
           } else {
             drawAmount = 1
           }
-          while (drawAmount >= loops) {
-            console.log(loops)
-            card[loops]  = getCardNames(cardDraw(drawAmount)) 
-            let cardFlat = card.flat()
+          while (drawAmount > loops) {
+            card[loops] = getCardNames(cardDraw(drawAmount))
+            var cardFlat = card.flat()
+            loops++
+          }
+          loops = 0
+          while (drawAmount * 2 > loops) {
             msgContent += `${cardFlat[loops]} of ${cardFlat[loops+1]}`
-            if (drawAmount === loops + 2) {
-              msgContent += `, and a `
-            } else if (drawAmount > loops + 2) {
+            if (drawAmount * 2 > loops + 4) {
               msgContent += `, a `
-            } 
+            }
+            if (drawAmount * 2 === loops + 4) {
+              msgContent += `, and a `
+            }
             loops++
             loops++
           }
           msg.reply(msgContent)
-          break
-        default:
-        msg.reply(`You did not specify an item to draw, or specified an invalid item.`) 
-      } break
+      }
+      break
     case 'use':
       switch (args[0]) {
         case 'scratch':
@@ -399,26 +401,22 @@ client.on('messageCreate', async msg => {
             let betAmount = parseInt(args[1])
             if (userStats.money >= betAmount) {
               userStats.money -= betAmount
-              var winStatus = 'no'
-              let slotRandom1 = slotsRandomizer()
-              let slots = JSON.stringify(slotRandom1)
-              slots = removeStringifyQuotes(slots)
-              let slotRandom2 = slotsRandomizer()
-              let slots2 = JSON.stringify(slotRandom2)
-              slots2 = removeStringifyQuotes(slots2)
-              let slotRandom3 = slotsRandomizer()
-              let slots3 = JSON.stringify(slotRandom3)
-              slots3 = removeStringifyQuotes(slots3)
-              let slotRandom4 = slotsRandomizer()
-              let slots4 = JSON.stringify(slotRandom4)
-              slots4 = removeStringifyQuotes(slots4)
-              let slotRandom5 = slotsRandomizer()
-              let slots5 = JSON.stringify(slotRandom5)
-              slots5 = removeStringifyQuotes(slots5)
+              let slots = []
+              let loops = 0
+              let looptimes = 5 
+              let winStatus = 'no'    
+              slots[0] = removeStringifyQuotes(JSON.stringify(slotsRandomizer()))              //A deal with the devil 5 times in a row
+              slots[1] = removeStringifyQuotes(JSON.stringify(slotsRandomizer()))             
+              slots[2] = removeStringifyQuotes(JSON.stringify(slotsRandomizer()))             
+              slots[3] = removeStringifyQuotes(JSON.stringify(slotsRandomizer()))
+              slots[4] = removeStringifyQuotes(JSON.stringify(slotsRandomizer()))
               let slotRandom6 = slotsRandomizer()
               let slots6 = JSON.stringify(slotRandom6)
               slots6 = removeStringifyQuotes(slots6)
               if (slotRandom6[0] === slotRandom6[2]) {
+                winStatus = 'win'
+              }
+              if (slotRandom6[1] === slotRandom6[2]) {
                 winStatus = 'win'
               }
               if (slotRandom6[0] === slotRandom6[1]) {
@@ -427,17 +425,13 @@ client.on('messageCreate', async msg => {
                   winStatus = 'big'
                 }
               }
-              let msgEdit = await msg.channel.send(slots)
-              await sleep(1000)
-              msgEdit.edit(slots2)
-              await sleep(1200)
-              msgEdit.edit(slots3)
-              await sleep(1200)
-              msgEdit.edit(slots4)
-              await sleep(1200)
-              msgEdit.edit(slots5)
-              await sleep(1200)
-              msgEdit.edit(slots6)
+              let msgEdit = await msg.channel.send(slots[0])
+              while(looptimes > loops) {
+                await sleep(getRandomIntInclusive(1000, 1200))
+                await sleep(1000)
+                msgEdit.edit(slots[loops+1])
+                loops++
+              }
               switch (winStatus) {
                 case 'no':
                   msg.reply('You lost.')
@@ -447,7 +441,7 @@ client.on('messageCreate', async msg => {
                   msg.reply(`You won ${betAmount*2}!`)
                   break;
                 case 'big':
-                  userStats.money += betAmount*10
+                  userStats.money += betAmount * 10
                   msg.reply(`You won ${betAmount*10}!`)
               }
             } else {
