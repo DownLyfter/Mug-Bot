@@ -246,9 +246,17 @@ const client = new Client({
 });
 const rawData = fs.readFileSync('stats.json', 'utf8')
 const data = JSON.parse(rawData)
-
+const help = {} //declaring the specific help commands
+help['slots'] = 'The slot command is used by messaging "Mug play slots <Amount>" this is gamble the amount you put in on a slot machine.'
+help['help'] = 'The help command will send all of the current commands mug bot can do. You can pull this up by messaging "Mug help".'
+help['draw'] = 'The draw command will draw an item. "The draw card" will draw a random card. You can use this command by messaging "Mug draw <item>"'
+help['work'] = 'The work command will either start you session of working or end the session. You will get paid by the minute. You can use this command by messaging "Mug work".'
+help['buy'] = 'The buy command will buy an item from the shop if you have enough money. You can use this command by messaging "Mug buy <item>"'
+help['drink'] = 'The drink command will drink one can of mug. You can use this command by messaging "Mug drink".'
+help['profile'] = 'The profile command will display an embed of your profile. You can use this command by messaging "Mug profile"'
+help['shop'] = 'The shop command will display an embed will all the items that are currently in the shop. You can use this command by messaging "Mug shop".'
+const helpCommands = ['help', 'slots', 'draw', 'work', 'buy', 'drink', 'profile', 'shop']
 var msgNumber = parseInt(data.messages)
-var deck = []
 var stats = {};
 var quoteSend
 if (fs.existsSync('mugstats.json')) {
@@ -457,7 +465,8 @@ client.on('messageCreate', async msg => {
 
       break;
     case 'help':
-      const helpEmbed = new MessageEmbed()
+      if(args[0] === undefined) {
+        const helpEmbed = new MessageEmbed()
         .setColor('#0099ff')
         .setTitle(`The Help Menu`)
         .setThumbnail('https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp')
@@ -476,7 +485,14 @@ client.on('messageCreate', async msg => {
       msg.channel.send({
         embeds: [helpEmbed]
       });
-      break;
+      } else {
+        if (helpCommands.includes(args[0])) {
+          msg.reply(help[args[0]])
+        } else {
+          msg.reply(`There is no ${args[0]} command.`)
+        }
+      }
+      break;   
     case 'work':
       if (userStats.workingStatus === true) {
         var workingTime = Date.now() - userStats.lastWorkTime;
