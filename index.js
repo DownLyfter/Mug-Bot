@@ -7,7 +7,10 @@ function saveStatsData() {
   jsonfile.writeFileSync('mugstats.json', stats)
   console.log('Saved Stats data.')
 }
-
+function saveServerRoleDate() {
+  jsonfile.writeFile('ServerRoles.json', ServerRoles)
+  console.log('Saved Server Roles Data.')
+}
 function milisToMinutes(millis) {
   var minutes = Math.floor(millis / 60000);
   return minutes;
@@ -241,6 +244,7 @@ const {
 const {
   parse
 } = require('path');
+const { Server } = require('http');
 const client = new Client({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]
 });
@@ -256,14 +260,19 @@ help['drink'] = 'The drink command will drink one can of mug. You can use this c
 help['profile'] = 'The profile command will display an embed of your profile. You can use this command by messaging "Mug profile"'
 help['shop'] = 'The shop command will display an embed will all the items that are currently in the shop. You can use this command by messaging "Mug shop".'
 const helpCommands = ['help', 'slots', 'draw', 'work', 'buy', 'drink', 'profile', 'shop']
+
 var msgNumber = parseInt(data.messages)
 var stats = {};
 var quoteSend
 if (fs.existsSync('mugstats.json')) {
   stats = jsonfile.readFileSync('mugstats.json');
-  console.log('Synced mug sats')
+  console.log('Synced mug stats')
 }
-
+var ServerRoles = {}
+if (fs.existsSync('ServerRoles.json')) {
+  ServerRoles = jsonfile.readFileSync('ServerRoles.json')
+  console.log('Synced Server Role stats')
+}
 client.once('ready', () => {
   console.log('Bot is online.');
 });
@@ -271,12 +280,17 @@ client.once('ready', () => {
 client.on('guildMemberAdd', member => {
   console.log('User ' + member.user.username + ' has join ther server!')
 });
-client.on('messageCreate', async msg => {
+client.on('messageCreate', async msg => {   
   if (msg.author.bot) return;
   if (msg.guild.id !== '886787687699333190') return;
   if (msg.content.startsWith(prefix) !== true) return;
   msgNumber++
   data.messages = JSON.stringify(msgNumber);
+  if (msg.guild.id in ServerRoles === false) {
+    ServerRoles[msg.guild.id] = {}
+  }
+const GuildRoles = ServerRoles[msg.guild.id]
+
   if (msg.guild.id in stats === false) {
     stats[msg.guild.id] = {};
   }
@@ -299,6 +313,7 @@ client.on('messageCreate', async msg => {
       scratchTickets: 0,
       Deck: [],
       },
+      miscItems: {},
     };
   }
 
@@ -315,6 +330,7 @@ client.on('messageCreate', async msg => {
       scratchTickets: 0,
     }
     userStats.deck = [] //version 0.5
+    if (userStats.miscItems === undefined) userStats.miscItems = {} //version 0.6
   }
   if (msg.mentions.members.first() !== undefined) {
     let mentionID = msg.mentions.users.first().id
@@ -337,14 +353,51 @@ client.on('messageCreate', async msg => {
         home: 1, //1 is no home, 2 would be the next tier of home
         items: {
         scratchTickets: 0,
-        deck: []  
+        deck: [],  
         },
+        miscItems: {},
       };
       saveStatsData()
       let mentionStats = mentionGuildStats[msg.mentions.users.first().id]
     }
   }
   switch (command) {
+    case 'set': 
+      switch (args[0]) {
+        case 'role':
+          if (!args[1]) msg.reply('please specify what to set, see "mug set role help" for more info.')
+          if (args[1] === 'help') msg.reply('Please send role id followed by requirements ie messsages or levels, then the amount of messages or levels.')
+          if (parseInt(args[1]) >= 1) {
+             if(!args[2]) msg.reply('Please specify whether role requirement is levels or messages.')
+             if(!args[3]) msg.reply('Please specify amount of messages or amount of levels.')
+             if (Object.keys(GuildRoles).length > 0) {
+              let loops = 0
+              while(loops <= Object.keys(GuildRoles).length) {
+                if(GuildRoles[loops].includes(args[1])) {
+                  msg.reply('Role already has a value.')
+                  return
+                }
+                loops++
+               }
+             }
+             switch (args[2].startsWith('m')) {
+              case true:
+                GuildRoles[Object.keys(GuildRoles).length++]= [args[1],'m',args[3]]
+                console.log(GuildRoles)
+                if (msg.guild.roles.cache.find(r => r.id === args[1]) === undefined) {
+                  msg.reply('Please specify a valid role id.') 
+                  return
+                }
+                saveServerRoleDate()
+                break
+             }
+            }
+          break;
+        default:
+          msg.reply(`Please specify what to set.`)
+          break
+      }
+    break
     case 'draw': 
       switch (args[0]) {
         case 'card':
@@ -747,7 +800,9 @@ client.on('messageCreate', async msg => {
     }
     msg.reply(`You got promoted ${promoTimes} times! You now make ${userStats.wage} per hour!`)
   }
-
+  if (msg.guild.id in ServerRoles) {
+    console.log(Object.keys(GuildRoles).length)
+  }
   userStats.money = (Math.round(userStats.money * 100)) / 100
   saveStatsData()
   saveMsgData()
