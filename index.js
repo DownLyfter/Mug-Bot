@@ -7,6 +7,7 @@ function saveLevelsData() {
   jsonfile.writeFileSync('ServerLevels.json', GolbalServerLevels)
   console.log('Saved Server Levels.')
 }
+
 function saveStatsData() {
   jsonfile.writeFileSync('mugstats.json', stats)
   console.log('Saved Stats data.')
@@ -215,9 +216,9 @@ function getCardNames(cardDraw) {
 }
 
 function xpCalc(level) {
-  let xp = Math.round((level*level)*(10*getRandomIntInclusive(1, 5)))
+  let xp = Math.round((level * level) * (10 * getRandomIntInclusive(1, 5)))
   if (xp > 10000) xp = 10000
-  return xp 
+  return xp
 }
 
 const mugPrice = 2
@@ -257,8 +258,12 @@ const {
 const {
   parse
 } = require('path');
-const { Server } = require('http');
-const { randomInt } = require('crypto')
+const {
+  Server
+} = require('http');
+const {
+  randomInt
+} = require('crypto')
 const client = new Client({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]
 });
@@ -299,15 +304,15 @@ client.once('ready', () => {
 client.on('guildMemberAdd', member => {
   console.log('User ' + member.user.username + ' has join ther server!')
 });
-client.on('messageCreate', async msg => {   
+client.on('messageCreate', async msg => {
   if (msg.author.bot) return;
   if (msg.guild.id !== '886787687699333190') return;
   if (msg.content.startsWith(prefix) !== true) return
 
   if (msg.guild.id in GolbalServerLevels === false) {
     GolbalServerLevels[msg.guild.id] = {}
-    }
-const GuildLevels = GolbalServerLevels[msg.guild.id]
+  }
+  const GuildLevels = GolbalServerLevels[msg.guild.id]
   if (msg.author.id in GuildLevels === false) {
     console.log(`${msg.author.id} has no Server Levels. Creating fresh levels`)
     GuildLevels[msg.author.id] = [
@@ -324,7 +329,7 @@ const GuildLevels = GolbalServerLevels[msg.guild.id]
     ServerRoles[msg.guild.id] = {}
     saveServerRoleData()
   }
-const GuildRoles = ServerRoles[msg.guild.id]
+  const GuildRoles = ServerRoles[msg.guild.id]
 
   if (msg.guild.id in stats === false) {
     stats[msg.guild.id] = {};
@@ -345,8 +350,8 @@ const GuildRoles = ServerRoles[msg.guild.id]
       lastUsedVersion: BotVersion,
       home: 1, //1 is no home, 2 would be the next tier of home
       items: {
-      scratchTickets: 0,
-      Deck: [],
+        scratchTickets: 0,
+        Deck: [],
       },
       miscItems: {},
     };
@@ -371,7 +376,7 @@ const GuildRoles = ServerRoles[msg.guild.id]
   }
 
   if (Date.now() - levelStats[3] >= 60000) {
-    levelStats[1] += getRandomIntInclusive(5, 10)+levelStats[0]
+    levelStats[1] += getRandomIntInclusive(5, 10) + levelStats[0]
     levelStats[4]++
     saveLevelsData()
   }
@@ -396,8 +401,8 @@ const GuildRoles = ServerRoles[msg.guild.id]
         lastUsedVersion: BotVersion,
         home: 1, //1 is no home, 2 would be the next tier of home
         items: {
-        scratchTickets: 0,
-        deck: [],  
+          scratchTickets: 0,
+          deck: [],
         },
         miscItems: {},
       };
@@ -406,42 +411,42 @@ const GuildRoles = ServerRoles[msg.guild.id]
     }
   }
   switch (command) {
-    case 'set': 
+    case 'set':
       switch (args[0]) {
         case 'role':
           if (!args[1]) msg.reply('please specify what to set, see "mug set role help" for more info.')
           if (args[1] === 'help') msg.reply('Please send role id followed by requirements ie messsages or levels, then the amount of messages or levels.')
           if (parseInt(args[1]) >= 1) {
-             if(!args[2]) return msg.reply('Please specify whether role requirement is levels or messages.')
-             if(!args[3]) return msg.reply('Please specify amount of messages or amount of levels.')
-             if (Object.keys(GuildRoles).length > 0) {
+            if (!args[2]) return msg.reply('Please specify whether role requirement is levels or messages.')
+            if (!args[3]) return msg.reply('Please specify amount of messages or amount of levels.')
+            if (Object.keys(GuildRoles).length > 0) {
               let loops = 0
-              while(loops < Object.keys(GuildRoles).length) {
-                if(GuildRoles[JSON.stringify(loops)].includes(args[1])) return  msg.reply('Role already has a value.')
+              while (loops < Object.keys(GuildRoles).length) {
+                if (GuildRoles[JSON.stringify(loops)].includes(args[1])) return msg.reply('Role already has a value.')
                 loops++
-               }
-             }
-             switch (args[2].startsWith('m')) {
-              case true:
-                GuildRoles[Object.keys(GuildRoles).length++]= [args[1],'m',args[3]]
-                if (msg.guild.roles.cache.find(r => r.id === args[1]) === undefined)   return  msg.reply('Please specify a valid role id.')
-                break
-                case false:
-                  GuildRoles[Object.keys(GuildRoles).length++]= [args[1],'l',args[3]]
-                  console.log(GuildRoles)
-                  if (msg.guild.roles.cache.find(r => r.id === args[1]) === undefined)   return  msg.reply('Please specify a valid role id.')
-                  break
-             }
-           
+              }
             }
-            saveServerRoleData()
+            switch (args[2].startsWith('m')) {
+              case true:
+                GuildRoles[Object.keys(GuildRoles).length++] = [args[1], 'm', args[3]]
+                if (msg.guild.roles.cache.find(r => r.id === args[1]) === undefined) return msg.reply('Please specify a valid role id.')
+                break
+              case false:
+                GuildRoles[Object.keys(GuildRoles).length++] = [args[1], 'l', args[3]]
+                console.log(GuildRoles)
+                if (msg.guild.roles.cache.find(r => r.id === args[1]) === undefined) return msg.reply('Please specify a valid role id.')
+                break
+            }
+
+          }
+          saveServerRoleData()
           break;
         default:
           msg.reply(`Please specify what to set.`)
           break
       }
-    break
-    case 'draw': 
+      break
+    case 'draw':
       switch (args[0]) {
         case 'card':
           let drawAmount = 0
@@ -504,11 +509,11 @@ const GuildRoles = ServerRoles[msg.guild.id]
               userStats.money -= betAmount
               let slots = []
               let loops = 0
-              let looptimes = 5 
-              let winStatus = 'no'    
-              slots[0] = removeStringifyQuotes(JSON.stringify(slotsRandomizer()))              //A deal with the devil 5 times in a row
-              slots[1] = removeStringifyQuotes(JSON.stringify(slotsRandomizer()))             
-              slots[2] = removeStringifyQuotes(JSON.stringify(slotsRandomizer()))             
+              let looptimes = 5
+              let winStatus = 'no'
+              slots[0] = removeStringifyQuotes(JSON.stringify(slotsRandomizer())) //A deal with the devil 5 times in a row
+              slots[1] = removeStringifyQuotes(JSON.stringify(slotsRandomizer()))
+              slots[2] = removeStringifyQuotes(JSON.stringify(slotsRandomizer()))
               slots[3] = removeStringifyQuotes(JSON.stringify(slotsRandomizer()))
               slots[4] = removeStringifyQuotes(JSON.stringify(slotsRandomizer()))
               let slotRandom6 = slotsRandomizer()
@@ -527,10 +532,10 @@ const GuildRoles = ServerRoles[msg.guild.id]
                 }
               }
               let msgEdit = await msg.channel.send(slots[0])
-              while(looptimes > loops) {
+              while (looptimes > loops) {
                 await sleep(getRandomIntInclusive(1000, 1200))
                 await sleep(1000)
-                msgEdit.edit(slots[loops+1])
+                msgEdit.edit(slots[loops + 1])
                 loops++
               }
               switch (winStatus) {
@@ -558,26 +563,26 @@ const GuildRoles = ServerRoles[msg.guild.id]
 
       break;
     case 'help':
-      if(args[0] === undefined) {
+      if (args[0] === undefined) {
         const helpEmbed = new MessageEmbed()
-        .setColor('#0099ff')
-        .setTitle(`The Help Menu`)
-        .setThumbnail('https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp')
-        .addField('shop', `Displays the mug shop.`, true)
-        .addField('work', `Start or stop working.`, true)
-        .addField('buy', `Purcase a shop item.`, true)
-        .addField('drink', `Drink a mug.`, true)
-        .addField('profile', `Display your statistics.`, true)
-        .addField('Play', 'Slots, and other games.', false)
-        .addField('Use', 'Use an item.', true)
-        .setTimestamp()
-        .setFooter({
-          text: `${msg.author.username} loves mug!`,
-          iconURL: 'https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp'
+          .setColor('#0099ff')
+          .setTitle(`The Help Menu`)
+          .setThumbnail('https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp')
+          .addField('shop', `Displays the mug shop.`, true)
+          .addField('work', `Start or stop working.`, true)
+          .addField('buy', `Purcase a shop item.`, true)
+          .addField('drink', `Drink a mug.`, true)
+          .addField('profile', `Display your statistics.`, true)
+          .addField('Play', 'Slots, and other games.', false)
+          .addField('Use', 'Use an item.', true)
+          .setTimestamp()
+          .setFooter({
+            text: `${msg.author.username} loves mug!`,
+            iconURL: 'https://cdn.discordapp.com/avatars/958300024595439666/72d1b87db3d8e5d7bb2923235727b1c9.webp'
+          });
+        msg.channel.send({
+          embeds: [helpEmbed]
         });
-      msg.channel.send({
-        embeds: [helpEmbed]
-      });
       } else {
         if (helpCommands.includes(args[0])) {
           msg.reply(help[args[0]])
@@ -585,7 +590,7 @@ const GuildRoles = ServerRoles[msg.guild.id]
           msg.reply(`There is no ${args[0]} command.`)
         }
       }
-      break;   
+      break;
     case 'work':
       if (userStats.workingStatus === true) {
         var workingTime = Date.now() - userStats.lastWorkTime;
@@ -640,53 +645,53 @@ const GuildRoles = ServerRoles[msg.guild.id]
               return
             }
             userStats.money -= 1000
-            userStats.home =2
+            userStats.home = 2
             msg.reply(`You home is now a tent.`)
           } else {
             msg.reply(`You have $${userStats.money}, you need $${1000-userStats.money} to buy a tent.`)
           }
           break
-          case 'shack':
-            if (userStats.money >= 5000) {
-              if (userStats.home >= 3) {
-                msg.reply(`Your home is already a ${homeCheck(userStats.home)}`)
-                break
-              }
-              userStats.money -= 5000
-              userStats.home = 3
-              msg.reply('Your home is now a shack!')
-            } else {
-              msg.reply(`You have $${userStats.money}, you need $${5000-userStats.money} more to buy a shack.`)
-            }
-          case 'house':
-           if (userStats.money >= 10000) {
-            if (userStats.home >= 4) {
-              msg.reply(`Your home is already a ${homeCheck(userStats.home)}.`)
-              return
-            }
-            userStats.money -= 10000
-            userStats.home = 4
-            msg.reply(`Your home is now a house.`)
-           } else {
-            msg.reply(`You have $${userStats.money}, you need $${10000-userStats.money} more to buy a house.`)
-           }
-          break
-        case 'mug':
-          console.log(`mug`)
-          if (parseInt(args[1]) > 0) {
-            let amount = parseInt(args[1])
-            if (userStats.money >= amount * mugPrice) {
-              userStats.mugAmount += amount
-              userStats.money -= amount * mugPrice
-              msg.reply(`You bought ${amount} mug's! You now have ${userStats.mugAmount} mug's!`)
+        case 'shack':
+          if (userStats.money >= 5000) {
+            if (userStats.home >= 3) {
+              msg.reply(`Your home is already a ${homeCheck(userStats.home)}`)
               break
             }
+            userStats.money -= 5000
+            userStats.home = 3
+            msg.reply('Your home is now a shack!')
           } else {
-            msg.reply(`${args[1]} is not a valid amount!`)
-            break
+            msg.reply(`You have $${userStats.money}, you need $${5000-userStats.money} more to buy a shack.`)
           }
-          default:
-            msg.reply(`You did not specify an item to buy, or ${args[0]} is not a buyable item.`)
+          case 'house':
+            if (userStats.money >= 10000) {
+              if (userStats.home >= 4) {
+                msg.reply(`Your home is already a ${homeCheck(userStats.home)}.`)
+                return
+              }
+              userStats.money -= 10000
+              userStats.home = 4
+              msg.reply(`Your home is now a house.`)
+            } else {
+              msg.reply(`You have $${userStats.money}, you need $${10000-userStats.money} more to buy a house.`)
+            }
+            break
+          case 'mug':
+            console.log(`mug`)
+            if (parseInt(args[1]) > 0) {
+              let amount = parseInt(args[1])
+              if (userStats.money >= amount * mugPrice) {
+                userStats.mugAmount += amount
+                userStats.money -= amount * mugPrice
+                msg.reply(`You bought ${amount} mug's! You now have ${userStats.mugAmount} mug's!`)
+                break
+              }
+            } else {
+              msg.reply(`${args[1]} is not a valid amount!`)
+              break
+            }
+            default:
+              msg.reply(`You did not specify an item to buy, or ${args[0]} is not a buyable item.`)
 
       }
       break;
@@ -817,10 +822,10 @@ const GuildRoles = ServerRoles[msg.guild.id]
     default:
       break;
   }
-  if(levelStats[1] >= levelStats[2]) {
-    levelStats[1] = levelStats[1]-levelStats[2]
+  if (levelStats[1] >= levelStats[2]) {
+    levelStats[1] = levelStats[1] - levelStats[2]
     levelStats[2] = xpCalc(levelStats[0])
-    levelStats[0] ++
+    levelStats[0]++
     saveLevelsData()
     console.log(levelStats)
   }
@@ -853,31 +858,31 @@ const GuildRoles = ServerRoles[msg.guild.id]
   if (Object.keys(GuildRoles).length > 0) {
     let roleAmount = Object.keys(GuildRoles).length
     let loops = 0
-    while(loops < roleAmount) {
+    while (loops < roleAmount) {
       let serverRole = GuildRoles[loops]
-      switch(serverRole[1]) {
+      switch (serverRole[1]) {
         case 'l':
-          if(levelStats[0] >= serverRole[2]){
+          if (levelStats[0] >= serverRole[2]) {
             await msg.guild.roles.fetch()
-            if(!msg.member.roles.cache.has(serverRole[0])) {
+            if (!msg.member.roles.cache.has(serverRole[0])) {
               msg.member.roles.add(serverRole[0])
             }
           }
-            break
+          break
         case 'm':
-          if(levelStats[4] >= serverRole[2]) {
+          if (levelStats[4] >= serverRole[2]) {
             await msg.guild.roles.fetch()
-            if(!msg.member.roles.cache.has(serverRole[0])) {
+            if (!msg.member.roles.cache.has(serverRole[0])) {
               msg.member.roles.add(serverRole[0])
               console.log(`Gave ${msg.author.username} role id ${serverRole[0]}`)
-            }           
+            }
           }
           break
       }
       loops++
-      }
     }
-  
+  }
+
   //GuildRoles= [args[1],'m',args[3]]
   userStats.money = (Math.round(userStats.money * 100)) / 100
   saveStatsData()
