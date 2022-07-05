@@ -3,14 +3,20 @@ function saveMsgData() {
   console.log('Saved Data')
 }
 
+function saveLevelsData() {
+  jsonfile.writeFileSync('ServerLevels.json', GolbalServerLevels)
+  console.log('Saved Server Levels.')
+}
 function saveStatsData() {
   jsonfile.writeFileSync('mugstats.json', stats)
   console.log('Saved Stats data.')
 }
-function saveServerRoleDate() {
-  jsonfile.writeFile('ServerRoles.json', ServerRoles)
+
+function saveServerRoleData() {
+  jsonfile.writeFileSync('ServerRoles.json', ServerRoles)
   console.log('Saved Server Roles Data.')
 }
+
 function milisToMinutes(millis) {
   var minutes = Math.floor(millis / 60000);
   return minutes;
@@ -207,6 +213,13 @@ function getCardNames(cardDraw) {
     return card
   }
 }
+
+function xpCalc(level) {
+  let xp = Math.round((level*level)*(10*getRandomIntInclusive(1, 5)))
+  if (xp > 10000) xp = 10000
+  return xp 
+}
+
 const mugPrice = 2
 const minWage = 5
 const mugEmoji = '<:mug:986947250179694612>'
@@ -245,6 +258,7 @@ const {
   parse
 } = require('path');
 const { Server } = require('http');
+const { randomInt } = require('crypto')
 const client = new Client({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]
 });
@@ -273,6 +287,11 @@ if (fs.existsSync('ServerRoles.json')) {
   ServerRoles = jsonfile.readFileSync('ServerRoles.json')
   console.log('Synced Server Role stats')
 }
+var ServerLevels = {}
+if (fs.existsSync('ServerLevels.json')) {
+  GolbalServerLevels = jsonfile.readFileSync('ServerLevels.json')
+  console.log('Synced Server Levels.')
+}
 client.once('ready', () => {
   console.log('Bot is online.');
 });
@@ -283,11 +302,27 @@ client.on('guildMemberAdd', member => {
 client.on('messageCreate', async msg => {   
   if (msg.author.bot) return;
   if (msg.guild.id !== '886787687699333190') return;
-  if (msg.content.startsWith(prefix) !== true) return;
-  msgNumber++
-  data.messages = JSON.stringify(msgNumber);
+  if (msg.content.startsWith(prefix) !== true) return
+
+  if (msg.guild.id in GolbalServerLevels === false) {
+    GolbalServerLevels[msg.guild.id] = {}
+    }
+const GuildLevels = GolbalServerLevels[msg.guild.id]
+  if (msg.author.id in GuildLevels === false) {
+    console.log(`${msg.author.id} has no Server Levels. Creating fresh levels`)
+    GuildLevels[msg.author.id] = [
+      1, //level
+      0, //xp
+      10, //Xp to next level
+      Date.now(), //last xp add time. 
+      0 //messages sent.
+    ]
+    saveLevelsData()
+  }
+  const levelStats = GuildLevels[msg.author.id]
   if (msg.guild.id in ServerRoles === false) {
     ServerRoles[msg.guild.id] = {}
+    saveServerRoleData()
   }
 const GuildRoles = ServerRoles[msg.guild.id]
 
@@ -318,8 +353,10 @@ const GuildRoles = ServerRoles[msg.guild.id]
   }
 
   const userStats = guildstats[msg.author.id];
+
   const args = msg.content.slice(prefix.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
+
   if (userStats.lastUsedVersion < BotVersion) { //checks for new version then adds the new stats to their stats.
     userStats.lastUsedVersion = BotVersion
     if (userStats.raiseHours > 0 === false) userStats.raiseHours = 5
@@ -332,6 +369,13 @@ const GuildRoles = ServerRoles[msg.guild.id]
     userStats.deck = [] //version 0.5
     if (userStats.miscItems === undefined) userStats.miscItems = {} //version 0.6
   }
+
+  if (Date.now() - levelStats[3] >= 60000) {
+    levelStats[1] += getRandomIntInclusive(5, 10)+levelStats[0]
+    levelStats[4]++
+    saveLevelsData()
+  }
+
   if (msg.mentions.members.first() !== undefined) {
     let mentionID = msg.mentions.users.first().id
     let mentionName = msg.mentions.users.first().username
@@ -368,30 +412,29 @@ const GuildRoles = ServerRoles[msg.guild.id]
           if (!args[1]) msg.reply('please specify what to set, see "mug set role help" for more info.')
           if (args[1] === 'help') msg.reply('Please send role id followed by requirements ie messsages or levels, then the amount of messages or levels.')
           if (parseInt(args[1]) >= 1) {
-             if(!args[2]) msg.reply('Please specify whether role requirement is levels or messages.')
-             if(!args[3]) msg.reply('Please specify amount of messages or amount of levels.')
+             if(!args[2]) return msg.reply('Please specify whether role requirement is levels or messages.')
+             if(!args[3]) return msg.reply('Please specify amount of messages or amount of levels.')
              if (Object.keys(GuildRoles).length > 0) {
               let loops = 0
-              while(loops <= Object.keys(GuildRoles).length) {
-                if(GuildRoles[loops].includes(args[1])) {
-                  msg.reply('Role already has a value.')
-                  return
-                }
+              while(loops < Object.keys(GuildRoles).length) {
+                if(GuildRoles[JSON.stringify(loops)].includes(args[1])) return  msg.reply('Role already has a value.')
                 loops++
                }
              }
              switch (args[2].startsWith('m')) {
               case true:
                 GuildRoles[Object.keys(GuildRoles).length++]= [args[1],'m',args[3]]
-                console.log(GuildRoles)
-                if (msg.guild.roles.cache.find(r => r.id === args[1]) === undefined) {
-                  msg.reply('Please specify a valid role id.') 
-                  return
-                }
-                saveServerRoleDate()
+                if (msg.guild.roles.cache.find(r => r.id === args[1]) === undefined)   return  msg.reply('Please specify a valid role id.')
                 break
+                case false:
+                  GuildRoles[Object.keys(GuildRoles).length++]= [args[1],'l',args[3]]
+                  console.log(GuildRoles)
+                  if (msg.guild.roles.cache.find(r => r.id === args[1]) === undefined)   return  msg.reply('Please specify a valid role id.')
+                  break
              }
+           
             }
+            saveServerRoleData()
           break;
         default:
           msg.reply(`Please specify what to set.`)
@@ -774,6 +817,13 @@ const GuildRoles = ServerRoles[msg.guild.id]
     default:
       break;
   }
+  if(levelStats[1] >= levelStats[2]) {
+    levelStats[1] = levelStats[1]-levelStats[2]
+    levelStats[2] = xpCalc(levelStats[0])
+    levelStats[0] ++
+    saveLevelsData()
+    console.log(levelStats)
+  }
   if (userStats.hoursWorked > userStats.raiseHours) {
     let promoTimes = 0
     while (userStats.hoursWorked > userStats.raiseHours) {
@@ -800,9 +850,35 @@ const GuildRoles = ServerRoles[msg.guild.id]
     }
     msg.reply(`You got promoted ${promoTimes} times! You now make ${userStats.wage} per hour!`)
   }
-  if (msg.guild.id in ServerRoles) {
-    console.log(Object.keys(GuildRoles).length)
-  }
+  if (Object.keys(GuildRoles).length > 0) {
+    let roleAmount = Object.keys(GuildRoles).length
+    let loops = 0
+    while(loops < roleAmount) {
+      let serverRole = GuildRoles[loops]
+      switch(serverRole[1]) {
+        case 'l':
+          if(levelStats[0] >= serverRole[2]){
+            await msg.guild.roles.fetch()
+            if(!msg.member.roles.cache.has(serverRole[0])) {
+              msg.member.roles.add(serverRole[0])
+            }
+          }
+            break
+        case 'm':
+          if(levelStats[4] >= serverRole[2]) {
+            await msg.guild.roles.fetch()
+            if(!msg.member.roles.cache.has(serverRole[0])) {
+              msg.member.roles.add(serverRole[0])
+              console.log(`Gave ${msg.author.username} role id ${serverRole[0]}`)
+            }           
+          }
+          break
+      }
+      loops++
+      }
+    }
+  
+  //GuildRoles= [args[1],'m',args[3]]
   userStats.money = (Math.round(userStats.money * 100)) / 100
   saveStatsData()
   saveMsgData()
